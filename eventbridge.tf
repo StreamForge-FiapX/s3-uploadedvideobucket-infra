@@ -17,13 +17,18 @@ resource "aws_cloudwatch_event_rule" "s3_object_created" {
       }
     }
   })
+  depends_on = [aws_s3_bucket.my_bucket] # Garante que o bucket exista antes de criar a regra
 }
 
 # Criar um destino no EventBridge para a regra
 resource "aws_cloudwatch_event_target" "send_to_eventbridge" {
-  rule      = aws_cloudwatch_event_rule.s3_object_created.name
-  target_id = "eventbridge-target"
-  arn       = var.eventbridge_target_arn # Substitua pelo ARN do destino (ex.: Lambda, SQS, etc.)
+  rule           = aws_cloudwatch_event_rule.s3_object_created.name
+  event_bus_name = aws_cloudwatch_event_bus.custom_event_bus.name # Garante o uso do Event Bus correto
+  target_id      = "eventbridge-target"
+  arn            = var.eventbridge_target_arn # Substitua pelo ARN do destino (ex.: Lambda, SQS, etc.)
+
+  # Depende explicitamente da regra
+  depends_on = [aws_cloudwatch_event_rule.s3_object_created]
 }
 
 # Permissão para o EventBridge invocar o destino
